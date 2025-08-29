@@ -1,65 +1,122 @@
-import { useState } from 'react'
-import './App.css'
-import useLocalStorage from './components/UseLocalStorage';
+import { useState } from "react";
+import useLocalStorage from "./components/UseLocalStorage";
+import "./App.css";
+
+type Task = {
+  id: number;
+  title: string;
+  description: string;
+  status: "pending" | "in-progress" | "completed";
+};
 
 function App() {
-
-  type Item = { id: number; text: string; completed: boolean };
-  const [items, setItems] = useLocalStorage<Item[]>("tasks", []);
-  const [text, setText] = useState("");
-
+  const [tasks, setTasks] = useLocalStorage<Task[]>("tasks", []);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
   const addTask = (): void => {
-
-    let newItem = {
+    if (!title.trim()) return; // prevent empty tasks
+    const newTask: Task = {
       id: Date.now(),
-      completed: false,
-      text: text,
+      title,
+      description,
+      status: "pending",
     };
-    setItems((prev) => [...prev, newItem]);
-    setText("");
+    setTasks((prev) => [...prev, newTask]);
+    setTitle("");
+    setDescription("");
   };
 
-  const deleteTask = (idToDelete: number): void => {
-    setItems((prev) => prev.filter(item => item.id !== idToDelete));
+  const toggleStatus = (id: number): void => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? {
+              ...task,
+              status:
+                task.status === "pending"
+                  ? "in-progress"
+                  : task.status === "in-progress"
+                  ? "completed"
+                  : "pending",
+            }
+          : task
+      )
+    );
   };
-  const toggleCompletion = (id: number): void => {
-  setItems((prev) =>
-    prev.map((item) =>
-      item.id === id ? { ...item, completed: !item.completed } : item
-    )
-  );
-};
+
+  const deleteTask = (id: number): void => {
+    setTasks((prev) => prev.filter((task) => task.id !== id));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "orange";
+      case "in-progress":
+        return "blue";
+      case "completed":
+        return "green";
+      default:
+        return "gray";
+    }
+  };
+
   return (
     <>
-      <h1>Trello</h1>
-      <input type="text" value={text} onChange={(e) => setText(e.target.value)} />
-      <button onClick={addTask}>CLick me</button>
+      <h1>Task Manager</h1>
 
-      {items.map((val) => (
-        <li key={val.id}>
-          {val.text}{" "}
-          <button onClick={() => deleteTask(val.id)}>delete</button>{" "}
-          <button
-      onClick={() => toggleCompletion(val.id)}
-      style={{
-        padding: "10px 20px",
-        margin: "10px",
-        border: "none",
-        borderRadius: "8px",
-        cursor: "pointer",
-        backgroundColor: val.completed ? "green" : "red",
-        color: "white",
-      }}
-    >
-      {val.completed ? "Completed" : "Pending"}
-       </button>
-        </li>
-      ))}
+      <input
+        type="text"
+        placeholder="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      <button onClick={addTask}>➕ Add Task</button>
 
-
+      <ul>
+        {tasks.map((task) => (
+          <li key={task.id}>
+            <h3>{task.title}</h3>
+            <p>{task.description}</p>
+            <button
+              onClick={() => toggleStatus(task.id)}
+              style={{
+                backgroundColor: getStatusColor(task.status),
+                color: "white",
+                padding: "8px 16px",
+                marginRight: "8px",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              {task.status}
+            </button>
+            <button
+              onClick={() => deleteTask(task.id)}
+              style={{
+                backgroundColor: "red",
+                color: "white",
+                padding: "8px 16px",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              ❌ Delete
+            </button>
+          </li>
+        ))}
+      </ul>
     </>
-  )
-};
+  );
+}
 
-export default App
+export default App;
